@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reconnaissance de la langue des signes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #video_container {
+            position: relative;
+            display: inline-block;
+            border: 5px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #video_feed {
+            width: 640px;  /* Définir la largeur de la vidéo */
+            height: 480px;  /* Définir la hauteur de la vidéo */
+            display: block;
+        }
+
+        #prediction {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #444;
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #888;
+        }
+    </style>
+    <script>
+        function fetchPrediction() {
+            fetch('/get_prediction')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('prediction').textContent = 'Lettre : ' + data.prediction;
+                });
+        }
+
+        setInterval(fetchPrediction, 1000);  // Fetch prediction every second
+    </script>
+</head>
+<body>
+    <h1>Reconnaissance de la langue des signes</h1>
+    <div id="video_container">
+        <img src="{{ url_for('video_feed') }}" id="video_feed">
+    </div>
+    <div id="prediction">Lettre : </div>
+    
+</body>
+</html>
