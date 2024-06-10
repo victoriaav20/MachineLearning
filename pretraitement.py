@@ -2,10 +2,9 @@ import os
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-# Chemin vers le dossier de dataset
-data_dir = './data_set/asl_alphabet_train/asl_alphabet_train'  # Remplacez par le chemin d'accès réel au dossier de votre dataset
-# Préparation des générateurs de données
-# Ajoutez rescale=1./255 pour normaliser les images
+data_dir = './data_set/asl_alphabet_train/asl_alphabet_train'  
+
+# Ajouts du rescale=1./255 pour normaliser les images
 train_datagen = ImageDataGenerator(
     rescale=1./255,
     rotation_range=20,       # Rotation aléatoire de l'image de 0 à 20 degrés
@@ -24,7 +23,7 @@ train_generator = train_datagen.flow_from_directory(
     target_size=(200, 200),  # Taille des images d'entrée
     batch_size=32,
     class_mode='categorical',  # Mode catégorique car nous avons plusieurs classes (26 lettres)
-    subset='training'          # Sous-ensemble d'entraînement
+    subset='training'          
 )
 
 # Générateur pour les données de validation
@@ -33,5 +32,5 @@ validation_generator = train_datagen.flow_from_directory(
     target_size=(200, 200),
     batch_size=32,
     class_mode='categorical',
-    subset='validation'        # Sous-ensemble de validation
+    subset='validation'        
 )

@@ -2,7 +2,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from pretraitement import train_generator, validation_generator
 
-# Construction du modèle
 model = Sequential([
     Conv2D(32, (3, 3), activation='relu', input_shape=(200, 200, 3)),
     MaxPooling2D(2, 2),
@@ -19,10 +18,15 @@ model = Sequential([
 # Compilation du modèle
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-# Assurez-vous que les générateurs sont correctement configurés et utilisés
+
 history = model.fit(
     train_generator,
     validation_data=validation_generator,
-    epochs=10,
+    epochs=5,
     verbose=1,
 )
+
+# Sauvegarde du modèle au format H5
+model.save('model_sign_language.h5')
+
+print("Le modèle a été sauvegardé au format H5.")
