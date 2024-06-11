@@ -44,26 +44,38 @@ def prediction(filename):
 
     # Afficher la prédiction
     predicted_class_index = np.argmax(prediction)
-    classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z','del','nothing','space']
 
     predicted_class = classes[predicted_class_index]
     current_prediction = predicted_class  # Mettre à jour la variable globale
     print("La classe prédite de l'img", filename, " est :", predicted_class)
 
-def extract_hand_roi(image, landmarks):
+def extract_hand_roi(image, landmarks, margin=160):
+    # Obtenir les coordonnées de la main
     h, w, _ = image.shape
     landmark_coords = [(int(landmark.x * w), int(landmark.y * h)) for landmark in landmarks.landmark]
     
+    # Déterminer la bounding box de la main
     x_coords, y_coords = zip(*landmark_coords)
     x_min, x_max = min(x_coords), max(x_coords)
     y_min, y_max = min(y_coords), max(y_coords)
     
-    margin = 60
-    x_min = max(0, x_min - margin)
-    x_max = min(w, x_max + margin)
-    y_min = max(0, y_min - margin)
-    y_max = min(h, y_max + margin)
+    # Calculer la largeur et la hauteur de la bounding box
+    box_width = x_max - x_min
+    box_height = y_max - y_min
     
+    # Déterminer la taille du carré en prenant la plus grande dimension de la bounding box
+    square_size = max(box_width, box_height)
+    
+    # Ajuster les coordonnées pour obtenir une bounding box carrée centrée sur la main avec une marge
+    center_x = (x_min + x_max) // 2
+    center_y = (y_min + y_max) // 2
+    x_min = max(0, center_x - square_size // 2 - margin)
+    x_max = min(w, center_x + square_size // 2 + margin)
+    y_min = max(0, center_y - square_size // 2 - margin)
+    y_max = min(h, center_y + square_size // 2 + margin)
+
+    # Extraire la ROI carrée de la main avec la marge
     hand_roi = image[y_min:y_max, x_min:x_max]
     hand_roi_resized = cv2.resize(hand_roi, (200, 200))
     return hand_roi_resized
@@ -75,6 +87,8 @@ def generate_frames():
         if not ret:
             break
         else:
+            frame=cv2.flip(frame, 1)
+            # Convertir l'image en RGB pour MediaPipe
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(frame_rgb)
             
