@@ -22,7 +22,7 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 history = model.fit(
     train_generator,
     validation_data=validation_generator,
-    epochs=20,
+    epochs=15,
     verbose=1,
 )
 

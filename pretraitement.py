@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -7,12 +8,6 @@ data_dir = './data_set/asl_alphabet_train/asl_alphabet_train'
 # Ajouts du rescale=1./255 pour normaliser les images
 train_datagen = ImageDataGenerator(
     rescale=1./255,
-    rotation_range=20,       # Rotation aléatoire de l'image de 0 à 20 degrés
-    width_shift_range=0.2,   # Décalage horizontal aléatoire
-    height_shift_range=0.2,  # Décalage vertical aléatoire
-    shear_range=0.2,         # Cisaillement de l'image
-    zoom_range=0.2,          # Zoom avant ou arrière dans l'image
-    horizontal_flip=True,    # Retournement horizontal des images
     fill_mode='nearest',     # Stratégie de remplissage des pixels manquants
     validation_split=0.2     # 20% des données pour la validation
 )
@@ -21,7 +16,7 @@ train_datagen = ImageDataGenerator(
 train_generator = train_datagen.flow_from_directory(
     data_dir,
     target_size=(200, 200),  # Taille des images d'entrée
-    batch_size=32,
+    batch_size=16,
     class_mode='categorical',  # Mode catégorique car nous avons plusieurs classes (26 lettres)
     subset='training'          
 )
@@ -30,7 +25,15 @@ train_generator = train_datagen.flow_from_directory(
 validation_generator = train_datagen.flow_from_directory(
     data_dir,
     target_size=(200, 200),
-    batch_size=32,
+    batch_size=16,
     class_mode='categorical',
     subset='validation'        
 )
+
+  # Afficher quelques images d'entraînement pour validation
+for images, labels in train_generator:
+     for i in range(5):
+        plt.imshow(images[i])
+        plt.title(np.argmax(labels[i]))
+        plt.show()
+     break

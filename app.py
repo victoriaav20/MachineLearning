@@ -1,15 +1,17 @@
+import os
+import numpy as np
 from flask import Flask, render_template, Response, request, jsonify
 import cv2
-import os
 import time
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import load_model
+import mediapipe as mp
 
 app = Flask(__name__)
+
+# Initialisation de la caméra
 cap = cv2.VideoCapture(0)
-import mediapipe as mp
 
 # Initialiser MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -24,89 +26,67 @@ mp_drawing = mp.solutions.drawing_utils
 # Charger le modèle de reconnaissance des signes
 model = load_model('model_sign_language.h5')
 
-current_prediction = ""  # Variable pour stocker la prédiction courante
+# Variable globale pour la prédiction courante
+current_prediction = ""
 
 def prediction(filename):
     global current_prediction
     
-    model = load_model('model_sign_language.h5')
-
     # Charger et prétraiter l'image à comparer
     img_path = filename
     img = image.load_img(img_path, target_size=(200, 200))
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array / 255.0  # normaliser les pixels entre 0 et 1
+    img_array = img_array / 255.0  # Normaliser les pixels entre 0 et 1
 
     # Faire la prédiction
     prediction = model.predict(img_array)
 
     # Afficher la prédiction
-    print(prediction)
-
     predicted_class_index = np.argmax(prediction)
-    classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N' ,'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
     predicted_class = classes[predicted_class_index]
     current_prediction = predicted_class  # Mettre à jour la variable globale
     print("La classe prédite de l'img", filename, " est :", predicted_class)
 
 def extract_hand_roi(image, landmarks):
-    # Obtenir les coordonnées de la main
     h, w, _ = image.shape
     landmark_coords = [(int(landmark.x * w), int(landmark.y * h)) for landmark in landmarks.landmark]
     
-    # Déterminer la bounding box de la main
     x_coords, y_coords = zip(*landmark_coords)
     x_min, x_max = min(x_coords), max(x_coords)
     y_min, y_max = min(y_coords), max(y_coords)
     
-    # Ajouter une marge autour de la main pour capturer toute la main
     margin = 60
     x_min = max(0, x_min - margin)
     x_max = min(w, x_max + margin)
     y_min = max(0, y_min - margin)
     y_max = min(h, y_max + margin)
     
-    # Extraire la ROI de la main
     hand_roi = image[y_min:y_max, x_min:x_max]
     return hand_roi
 
 def generate_frames():
     while True:
-        # Capture une frame de la caméra
         ret, frame = cap.read()
         if not ret:
             break
         else:
-            # Convertir l'image en RGB pour MediaPipe
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            # Détecter les mains sur l'image
             results = hands.process(frame_rgb)
             
-            # Vérifier s'il y a des mains détectées
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
-                    # Imprimer un message dans la console
-                    print("Main détectée par MediaPipe!")
-                    # Dessiner les annotations des mains détectées sur l'image
                     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                    
-                    # Extraire la ROI de la main
                     hand_roi = extract_hand_roi(frame, hand_landmarks)
                     
-                    # Génère un nom de fichier unique
                     timestamp = int(time.time())
                     filename = f"captured_frame_{timestamp}.jpg"
                     
-                    # Sauvegarde la ROI de la main dans un fichier JPEG
                     cv2.imwrite(filename, hand_roi)
-                    
-                    # Effectuer la comparaison avec le modèle
-                    hand_roi_rgb = cv2.cvtColor(hand_roi, cv2.COLOR_BGR2RGB)
                     prediction(filename)
             
-            # Encoder la frame en format JPEG
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
@@ -126,4 +106,8 @@ def get_prediction():
     return jsonify(prediction=current_prediction)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    try:
+        app.run(debug=True)
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
