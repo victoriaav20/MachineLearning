@@ -28,15 +28,12 @@ current_prediction = ""  # Variable pour stocker la prédiction courante
 
 def prediction(filename):
     global current_prediction
-    
-    model = load_model('model_sign_language.h5')
 
     # Charger et prétraiter l'image à comparer
     img_path = filename
-    img = image.load_img(img_path, target_size=(200, 200))
+    img = image.load_img(img_path)
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array / 255.0  # normaliser les pixels entre 0 et 1
 
     # Faire la prédiction
     prediction = model.predict(img_array)
@@ -51,7 +48,7 @@ def prediction(filename):
     current_prediction = predicted_class  # Mettre à jour la variable globale
     print("La classe prédite de l'img", filename, " est :", predicted_class)
 
-def extract_hand_roi(image, landmarks):
+def extract_hand_roi(image, landmarks, margin=190):
     # Obtenir les coordonnées de la main
     h, w, _ = image.shape
     landmark_coords = [(int(landmark.x * w), int(landmark.y * h)) for landmark in landmarks.landmark]
@@ -61,16 +58,26 @@ def extract_hand_roi(image, landmarks):
     x_min, x_max = min(x_coords), max(x_coords)
     y_min, y_max = min(y_coords), max(y_coords)
     
-    # Ajouter une marge autour de la main pour capturer toute la main
-    margin = 60
-    x_min = max(0, x_min - margin)
-    x_max = min(w, x_max + margin)
-    y_min = max(0, y_min - margin)
-    y_max = min(h, y_max + margin)
+    # Calculer la largeur et la hauteur de la bounding box
+    box_width = x_max - x_min
+    box_height = y_max - y_min
+
+    # Déterminer la taille du carré en prenant la plus grande dimension de la bounding box
+    square_size = max(box_width, box_height)
     
-    # Extraire la ROI de la main
+    # Ajuster les coordonnées pour obtenir une bounding box carrée centrée sur la main avec une marge
+    center_x = (x_min + x_max) // 2
+    center_y = (y_min + y_max) // 2
+    x_min = max(0, center_x - square_size // 2 - margin)
+    x_max = min(w, center_x + square_size // 2 + margin)
+    y_min = max(0, center_y - square_size // 2 - margin)
+    y_max = min(h, center_y + square_size // 2 + margin)
+
+    # Extraire la ROI carrée de la main avec la marge
     hand_roi = image[y_min:y_max, x_min:x_max]
-    return hand_roi
+    hand_roi_resized = cv2.resize(hand_roi, (200, 200))
+    return hand_roi_resized
+
 
 def generate_frames():
     while True:
