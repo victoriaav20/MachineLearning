@@ -34,7 +34,7 @@ def prediction(filename):
     
     # Charger et prétraiter l'image à comparer
     img_path = filename
-    img = image.load_img(img_path, target_size=(200, 200))
+    img = image.load_img(img_path)
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
     img_array = img_array / 255.0  # Normaliser les pixels entre 0 et 1
@@ -65,7 +65,9 @@ def extract_hand_roi(image, landmarks):
     y_max = min(h, y_max + margin)
     
     hand_roi = image[y_min:y_max, x_min:x_max]
-    return hand_roi
+    hand_roi_resized = cv2.resize(hand_roi, (200, 200))
+    return hand_roi_resized
+
 
 def generate_frames():
     while True:
